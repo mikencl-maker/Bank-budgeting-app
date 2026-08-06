@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="theme-color" content="#F4EFEA" />
+<title>Vault Bank — Account Transactions</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cream:#F4EFEA;
+    --watermark:#E6DDD5;
+    --maroon:#9C1B32;
+    --maroon-deep:#7A1526;
+    --maroon-light:#C23652;
+    --pink:#E9AEAB;
+    --pink-soft:#F1C6C3;
+    --text:#221D1B;
+    --text-dim:#6B615C;
+    --text-faint:#A79E97;
+    --white:#FFFFFF;
+    --line:#D7CCC3;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{
+    margin:0; background:var(--cream); color:var(--text);
+    font-family:'Roboto',system-ui,sans-serif;
+    display:flex; justify-content:center; overflow-x:hidden;
+  }
+  #app{
+    width:100%; max-width:480px; min-height:100vh; min-height:100dvh;
+    display:flex; flex-direction:column; position:relative;
+    background:
+      repeating-linear-gradient(45deg, var(--watermark) 0 2px, transparent 2px 26px),
+      repeating-linear-gradient(-45deg, var(--watermark) 0 2px, transparent 2px 26px),
+      var(--cream);
+  }
+
+  /* ---------- Header ---------- */
+  header{
+    padding:16px 16px 0; position:sticky; top:0; z-index:10;
+    background:var(--cream);
+  }
+  .brand-row{display:flex; align-items:flex-start; justify-content:space-between; gap:10px;}
+  .brand{display:flex; align-items:center; gap:10px;}
+  .brand-mark{
+    width:38px; height:38px; border-radius:5px; background:var(--maroon);
+    display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  }
+  .brand-mark svg{width:22px; height:22px;}
+  .brand-word{line-height:1;}
+  .brand-word .name{
+    font-family:'Oswald',sans-serif; font-weight:700; font-size:19px;
+    letter-spacing:0.01em; color:var(--text); text-transform:uppercase;
+  }
+  .brand-word .sub{
+    font-family:'Oswald',sans-serif; font-weight:500; font-size:9.5px;
+    letter-spacing:0.14em; color:var(--text-dim); text-transform:uppercase; margin-top:2px;
+  }
+  .balance-box{text-align:right; flex-shrink:0;}
+  .balance-box .k{font-size:10.5px; color:var(--text-dim); margin-bottom:3px;}
+  .balance-box .v{
+    font-family:'Roboto',sans-serif; font-weight:700; font-size:18px;
+    font-variant-numeric:tabular-nums; color:var(--text);
+  }
+  .header-rule{height:3px; background:var(--maroon); margin-top:14px;}
+
+  /* ---------- Banner ---------- */
+  .banner{background:var(--maroon); padding:14px 16px 12px; margin-bottom:2px;}
+  .banner .who{
+    font-family:'Oswald',sans-serif; font-weight:600; font-size:19px; color:var(--white);
+    letter-spacing:0.01em;
+  }
+  .banner .what{
+    text-align:center; font-size:12px; color:rgba(255,255,255,0.88);
+    letter-spacing:0.04em; margin-top:2px; font-weight:500;
+  }
+
+  /* ---------- Statement banner (1st of month) ---------- */
+  .statement-banner{
+    margin:12px 16px 0; padding:11px 13px; border-radius:6px;
+    background:var(--white); border:1px solid var(--maroon);
+    display:none; align-items:center; gap:10px; cursor:pointer;
+  }
+  .statement-banner.show{display:flex;}
+  .statement-banner .ic{font-size:15px; color:var(--maroon);}
+  .statement-banner .txt{flex:1; font-size:11.5px; color:var(--text); line-height:1.4;}
+  .statement-banner .txt b{display:block; font-size:12.5px; margin-bottom:1px; color:var(--maroon); font-family:'Oswald',sans-serif;}
+  .statement-banner .close{color:var(--text-faint); font-size:15px; padding:2px 4px;}
+
+  /* ---------- Main ---------- */
+  main{flex:1; padding:14px 0 100px; overflow-y:auto;}
+  .view{display:none; animation:fadein .2s ease;}
+  .view.active{display:block;}
+  @keyframes fadein{from{opacity:0;} to{opacity:1;}}
+  .caption{
+    text-align:center; font-size:12px; color:var(--text-dim); margin:2px 16px 12px;
+  }
+  .section-label{
+    font-family:'Oswald',sans-serif; font-size:12px; font-weight:600; letter-spacing:0.08em;
+    text-transform:uppercase; color:var(--maroon); margin:0 16px 10px;
+  }
+
+  /* ---------- Ledger rows (statement style) ---------- */
+  .stmt-row{
+    background:var(--pink); padding:10px 16px; margin-bottom:2px;
+    display:flex; flex-direction:column; gap:2px;
+  }
+  .stmt-row:nth-child(odd){background:var(--pink-soft);}
+  .stmt-top{display:flex; justify-content:space-between; align-items:baseline; gap:10px;}
+  .stmt-desc{font-size:14px; font-weight:500; color:var(--text);
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .stmt-amount{font-size:14px; font-weight:700; color:var(--text);
+    font-variant-numeric:tabular-nums; white-space:nowrap;}
+  .stmt-bottom{display:flex; justify-content:space-between; align-items:baseline; gap:10px;}
+  .stmt-meta{font-size:10.5px; color:var(--text-dim);}
+  .stmt-cat{font-size:10.5px; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.03em;}
+  .day-label{
+    font-family:'Oswald',sans-serif; font-size:11px; font-weight:600; color:var(--text-dim);
+    text-transform:uppercase; letter-spacing:0.08em; padding:14px 16px 6px;
+  }
+
+  .empty-state{text-align:center; padding:60px 24px; color:var(--text-dim);}
+  .empty-state .glyph{font-size:24px; margin-bottom:10px; color:var(--maroon);}
+  .empty-state p{font-size:13px; line-height:1.6; margin:0;}
+
+  /* ---------- Log form ---------- */
+  .form-wrap{padding:0 16px;}
+  .type-switch{
+    display:flex; background:var(--white); border:1px solid var(--line);
+    border-radius:6px; padding:3px; margin-bottom:20px;
+  }
+  .type-switch button{
+    flex:1; padding:11px; border:none; border-radius:4px; background:transparent;
+    color:var(--text-dim); font-family:'Oswald',sans-serif; font-weight:600; font-size:13px;
+    cursor:pointer; transition:all .15s; letter-spacing:0.04em; text-transform:uppercase;
+  }
+  .type-switch button.active{background:var(--maroon); color:var(--white);}
+
+  .chip-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:7px; margin-bottom:20px;}
+  .chip{
+    padding:11px 6px; text-align:center; border-radius:5px; border:1px solid var(--line);
+    background:var(--white); color:var(--text-dim); font-size:11.5px; font-weight:500;
+    cursor:pointer; transition:all .15s; user-select:none;
+  }
+  .chip.selected{border-color:var(--maroon); color:var(--maroon); background:var(--pink-soft); font-weight:700;}
+
+  .field{margin-bottom:14px;}
+  .field label{display:block; font-size:11px; color:var(--text-dim); margin-bottom:6px; font-weight:500;}
+  .field input{
+    width:100%; padding:13px; border-radius:5px; border:1px solid var(--line);
+    background:var(--white); color:var(--text); font-size:14.5px;
+    font-family:'Roboto',sans-serif; outline:none; transition:border-color .15s;
+  }
+  .field input:focus{border-color:var(--maroon);}
+  .field.amount input{font-size:20px; font-weight:700; font-variant-numeric:tabular-nums;}
+  .field input::placeholder{color:var(--text-faint);}
+
+  .submit-btn{
+    width:100%; padding:15px; border:none; border-radius:6px; font-weight:700; font-size:13.5px;
+    cursor:pointer; margin-top:4px; letter-spacing:0.08em; text-transform:uppercase;
+    font-family:'Oswald',sans-serif; background:var(--maroon); color:var(--white); transition:opacity .15s;
+  }
+  .submit-btn:active{opacity:0.85;}
+
+  .toast{
+    position:fixed; bottom:98px; left:50%; transform:translateX(-50%) translateY(20px);
+    background:var(--maroon); color:var(--white); padding:11px 18px;
+    border-radius:6px; font-size:12.5px; font-weight:500;
+    opacity:0; pointer-events:none; transition:all .3s; max-width:90%; text-align:center;
+    z-index:100; box-shadow:0 8px 20px rgba(0,0,0,0.25);
+  }
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+
+  /* ---------- Stats / Reports ---------- */
+  .stat-grid{display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:0 16px 22px;}
+  .stat-card{background:var(--white); border:1px solid var(--line); border-radius:6px; padding:12px;}
+  .stat-card .k{font-size:10px; color:var(--text-dim); margin-bottom:5px; text-transform:uppercase; letter-spacing:0.05em;}
+  .stat-card .v{font-family:'Roboto',sans-serif; font-weight:700; font-size:17px; font-variant-numeric:tabular-nums; color:var(--text);}
+  .stat-card .v.maroon{color:var(--maroon);}
+
+  .holdings-wrap{padding:0 16px;}
+  .holding{margin-bottom:13px;}
+  .holding-top{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:6px; font-size:12.5px;}
+  .holding-name{font-weight:600; color:var(--text);}
+  .holding-pct{font-size:11.5px; color:var(--text-dim); font-variant-numeric:tabular-nums;}
+  .holding-bar-track{height:7px; background:var(--white); border:1px solid var(--line); border-radius:4px; overflow:hidden;}
+  .holding-bar-fill{height:100%; background:var(--maroon);}
+  .holding-amount{font-size:11px; color:var(--text-dim); margin-top:4px; font-variant-numeric:tabular-nums;}
+
+  .month-nav{
+    display:flex; align-items:center; justify-content:space-between;
+    margin:0 16px 18px; padding:11px 13px; background:var(--white);
+    border:1px solid var(--line); border-radius:6px;
+  }
+  .month-nav button{
+    background:var(--cream); border:1px solid var(--line); color:var(--maroon);
+    width:30px; height:30px; border-radius:5px; font-size:15px; cursor:pointer;
+  }
+  .month-nav button:disabled{color:var(--text-faint); cursor:not-allowed; opacity:0.5;}
+  .month-nav .month-title{font-family:'Oswald',sans-serif; font-weight:600; font-size:13.5px; letter-spacing:0.04em;}
+  .change-badge{
+    font-size:11px; font-weight:600; padding:3px 9px; border-radius:4px;
+    display:inline-flex; align-items:center; gap:4px; margin:0 16px 8px;
+    background:var(--white); border:1px solid var(--line); color:var(--text-dim);
+  }
+
+  /* ---------- Bottom nav ---------- */
+  nav{position:fixed; bottom:0; left:0; right:0; display:flex; justify-content:center;
+    padding-bottom:env(safe-area-inset-bottom, 0); z-index:20;}
+  .nav-inner{width:100%; max-width:480px; display:flex; background:var(--white);
+    border-top:2px solid var(--maroon);}
+  .nav-btn{
+    flex:1; padding:12px 0 9px; border:none; background:transparent; color:var(--text-faint);
+    cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:4px;
+    font-family:'Oswald',sans-serif; font-size:9.5px; font-weight:600;
+    letter-spacing:0.04em; text-transform:uppercase; transition:color .15s;
+  }
+  .nav-btn.active{color:var(--maroon);}
+  .nav-btn svg{width:18px; height:18px;}
+  ::-webkit-scrollbar{width:0; height:0;}
+</style>
+</head>
+<body>
+
+<div id="app">
+  <header>
+    <div class="brand-row">
+      <div class="brand">
+        <div class="brand-mark">
+          <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 21h18"/><path d="M5 21V9l7-5 7 5v12"/><path d="M9 21V13h6v8"/>
+          </svg>
+        </div>
+        <div class="brand-word">
+          <div class="name">Vault Bank</div>
+          <div class="sub">Personal Ledger</div>
+        </div>
+      </div>
+      <div class="balance-box">
+        <div class="k">Account balance</div>
+        <div class="v" id="balanceDisplay">€0.00</div>
+      </div>
+    </div>
+    <div class="header-rule"></div>
+  </header>
+
+  <div class="banner">
+    <div class="who">Michael Nicolini</div>
+    <div class="what" id="bannerSub">Account Transactions</div>
+  </div>
+
+  <div class="statement-banner" id="statementBanner">
+    <span class="ic">&#128196;</span>
+    <span class="txt"><b>Monthly statement ready</b><span id="statementBannerText">Tap to view last month's report</span></span>
+    <span class="close" id="statementClose">&#10005;</span>
+  </div>
+
+  <main>
+    <!-- LOG VIEW -->
+    <section class="view active" id="view-log">
+      <div class="form-wrap">
+        <div class="type-switch">
+          <button id="btnTypeExpense" class="active">Expense</button>
+          <button id="btnTypePayment">Payment</button>
+        </div>
+
+        <div id="categoryBlock">
+          <div class="section-label" style="margin-left:0;">Category</div>
+          <div class="chip-grid" id="chipGrid"></div>
+        </div>
+
+        <div class="field">
+          <label id="descLabel">What exactly was it?</label>
+          <input type="text" id="descInput" placeholder="e.g. Pizza with friends" />
+        </div>
+
+        <div class="field amount">
+          <label>Amount (&euro;)</label>
+          <input type="text" inputmode="decimal" id="amountInput" placeholder="0.00" />
+        </div>
+
+        <button class="submit-btn" id="submitBtn">Log Expense</button>
+      </div>
+    </section>
+
+    <!-- LEDGER VIEW -->
+    <section class="view" id="view-ledger">
+      <div class="caption" id="ledgerCaption">Here are your transactions</div>
+      <div id="ledgerContent"></div>
+    </section>
+
+    <!-- STATS VIEW -->
+    <section class="view" id="view-stats">
+      <div class="section-label">All-Time Overview</div>
+      <div class="stat-grid" id="statGrid"></div>
+      <div class="section-label">Spend by Category</div>
+      <div class="holdings-wrap" id="holdingsContent"></div>
+    </section>
+
+    <!-- REPORTS VIEW -->
+    <section class="view" id="view-reports">
+      <div class="month-nav">
+        <button id="prevMonthBtn">&lsaquo;</button>
+        <span class="month-title" id="monthTitle">&mdash;</span>
+        <button id="nextMonthBtn">&rsaquo;</button>
+      </div>
+      <div id="reportContent"></div>
+    </section>
+  </main>
+
+  <nav>
+    <div class="nav-inner">
+      <button class="nav-btn active" data-view="log">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Log
+      </button>
+      <button class="nav-btn" data-view="ledger">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="14" y2="18"/></svg>
+        Ledger
+      </button>
+      <button class="nav-btn" data-view="stats">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="19" x2="4" y2="10"/><line x1="11" y1="19" x2="11" y2="5"/><line x1="18" y1="19" x2="18" y2="13"/></svg>
+        Stats
+      </button>
+      <button class="nav-btn" data-view="reports">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></svg>
+        Reports
+      </button>
+    </div>
+  </nav>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const CATEGORIES = ["Food","Transport","Entertainment","Bills","Shopping","Health","Education","Subs","Other"];
+const STORAGE_KEY = "transactions";
+const MONTH_NAMES = ["JANUARY","FEBRUARY","MARCH","APRIL","MAY","JUNE","JULY","AUGUST","SEPTEMBER","OCTOBER","NOVEMBER","DECEMBER"];
+const BANNER_SUBS = { log:"New Transaction", ledger:"Account Transactions", stats:"Spending Overview", reports:"Monthly Statement" };
+
+let transactions = [];
+let currentType = "expense";
+let selectedCategory = CATEGORIES[0];
+let loaded = false;
+let reportDate = new Date();
+
+const $ = id => document.getElementById(id);
+const pad = n => String(n).padStart(2,"0");
+
+// ---------- Persistence ----------
+// Uses browser localStorage, so data is saved on THIS device/browser only.
+async function loadData(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    transactions = raw ? JSON.parse(raw) : [];
+  }catch(e){
+    transactions = [];
+  }
+  loaded = true;
+  checkMonthlyStatement();
+  renderAll();
+}
+
+async function saveData(){
+  try{
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(transactions));
+  }catch(e){
+    showToast("Couldn't save — try again");
+  }
+}
+
+// ---------- Helpers ----------
+function fmt(n){ return "$" + Math.abs(n).toFixed(2); }
+function getBalance(){ return transactions.length ? transactions[transactions.length-1].balanceAfter : 0; }
+function showToast(msg){
+  const t = $("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(showToast._t);
+  showToast._t = setTimeout(()=>t.classList.remove("show"), 2200);
+}
+function fmtDateShort(d){ return d.toLocaleDateString(undefined,{weekday:'short', day:'numeric', month:'short'}); }
+function fmtTime(d){ return pad(d.getHours()) + ":" + pad(d.getMinutes()); }
+function escapeHtml(s){
+  const d = document.createElement("div");
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+// ---------- Category chips ----------
+function renderChips(){
+  const grid = $("chipGrid");
+  grid.innerHTML = "";
+  CATEGORIES.forEach(cat=>{
+    const el = document.createElement("div");
+    el.className = "chip" + (cat===selectedCategory ? " selected" : "");
+    el.textContent = cat;
+    el.onclick = ()=>{ selectedCategory = cat; renderChips(); };
+    grid.appendChild(el);
+  });
+}
+
+// ---------- Type switch ----------
+function setType(type){
+  currentType = type;
+  $("btnTypeExpense").classList.toggle("active", type==="expense");
+  $("btnTypePayment").classList.toggle("active", type==="payment");
+  $("categoryBlock").style.display = type==="expense" ? "block" : "none";
+  $("descLabel").textContent = type==="expense" ? "What exactly was it?" : "Where's it from?";
+  $("descInput").placeholder = type==="expense" ? "e.g. Pizza with friends" : "e.g. Allowance, freelance gig";
+  $("submitBtn").textContent = type==="expense" ? "Log Expense" : "Log Payment";
+}
+
+// ---------- Submit ----------
+async function handleSubmit(){
+  const desc = $("descInput").value.trim();
+  const amountRaw = $("amountInput").value.trim().replace(",", ".");
+  const amount = parseFloat(amountRaw);
+
+  if(!desc){ showToast("Add a description first"); return; }
+  if(!amount || amount <= 0){ showToast("Enter a valid amount"); return; }
+
+  const delta = currentType === "expense" ? -amount : amount;
+  const balanceAfter = getBalance() + delta;
+
+  transactions.push({
+    id: Date.now(),
+    type: currentType,
+    category: currentType === "expense" ? selectedCategory : null,
+    description: desc,
+    amount: amount,
+    date: new Date().toISOString(),
+    balanceAfter: balanceAfter
+  });
+
+  await saveData();
+  $("descInput").value = "";
+  $("amountInput").value = "";
+  showToast((currentType==="expense" ? "-" : "+") + fmt(amount) + " logged");
+  renderAll();
+}
+
+// ---------- Balance ----------
+function renderBalance(){
+  const bal = getBalance();
+  $("balanceDisplay").textContent = (bal < 0 ? "-" : "") + fmt(bal);
+}
+
+// ---------- Ledger ----------
+function renderLedger(){
+  const content = $("ledgerContent");
+  $("ledgerCaption").textContent = transactions.length
+    ? `Here are your last ${Math.min(transactions.length, 25)} transactions`
+    : "Here are your transactions";
+
+  if(!transactions.length){
+    content.innerHTML = `<div class="empty-state"><div class="glyph">&#9671;</div><p>No transactions yet.<br>Log an expense or payment to start your statement.</p></div>`;
+    return;
+  }
+
+  const recent = [...transactions].reverse().slice(0, 25);
+  const groups = {};
+  const order = [];
+  recent.forEach(tx=>{
+    const d = new Date(tx.date);
+    const key = fmtDateShort(d);
+    if(!groups[key]){ groups[key]=[]; order.push(key); }
+    groups[key].push(tx);
+  });
+
+  content.innerHTML = order.map(key=>{
+    const rows = groups[key].map(tx=>{
+      const d = new Date(tx.date);
+      const amountLabel = tx.type === "expense"
+        ? "-" + fmt(tx.amount) + " DB"
+        : fmt(tx.amount) + " CR";
+      const catLabel = tx.type === "expense" ? tx.category : "Payment";
+      return `
+        <div class="stmt-row">
+          <div class="stmt-top">
+            <span class="stmt-desc">${escapeHtml(tx.description)}</span>
+            <span class="stmt-amount">${amountLabel}</span>
+          </div>
+          <div class="stmt-bottom">
+            <span class="stmt-meta">${fmtTime(d)}</span>
+            <span class="stmt-cat">${escapeHtml(catLabel)}</span>
+          </div>
+        </div>`;
+    }).join("");
+    return `<div class="day-label">${key}</div>${rows}`;
+  }).join("");
+}
+
+// ---------- All-time Stats ----------
+function renderStats(){
+  const expenses = transactions.filter(t=>t.type==="expense");
+  const payments = transactions.filter(t=>t.type==="payment");
+  const totalSpent = expenses.reduce((s,t)=>s+t.amount,0);
+  const totalIncome = payments.reduce((s,t)=>s+t.amount,0);
+  const avg = expenses.length ? totalSpent/expenses.length : 0;
+
+  $("statGrid").innerHTML = `
+    <div class="stat-card"><div class="k">Income</div><div class="v">${fmt(totalIncome)}</div></div>
+    <div class="stat-card"><div class="k">Spent</div><div class="v">${fmt(totalSpent)}</div></div>
+    <div class="stat-card"><div class="k">Net</div><div class="v maroon">${fmt(totalIncome-totalSpent)}</div></div>
+    <div class="stat-card"><div class="k">Avg / expense</div><div class="v">${fmt(avg)}</div></div>
+  `;
+
+  const holdingsEl = $("holdingsContent");
+  if(!expenses.length){
+    holdingsEl.innerHTML = `<div class="empty-state"><div class="glyph">&#9671;</div><p>No expenses logged yet &mdash;<br>your category breakdown will appear here.</p></div>`;
+    return;
+  }
+  holdingsEl.innerHTML = renderHoldingsHtml(expenses, totalSpent);
+}
+
+function renderHoldingsHtml(expenses, totalSpent){
+  const totals = {};
+  expenses.forEach(t=>{ totals[t.category] = (totals[t.category]||0) + t.amount; });
+  const sorted = Object.entries(totals).sort((a,b)=>b[1]-a[1]);
+  const max = sorted[0][1];
+  return sorted.map(([cat, amt])=>{
+    const pct = (amt/totalSpent*100).toFixed(1);
+    const width = (amt/max*100).toFixed(1);
+    return `
+      <div class="holding">
+        <div class="holding-top">
+          <span class="holding-name">${escapeHtml(cat)}</span>
+          <span class="holding-pct">${pct}%</span>
+        </div>
+        <div class="holding-bar-track"><div class="holding-bar-fill" style="width:${width}%"></div></div>
+        <div class="holding-amount">${fmt(amt)}</div>
+      </div>`;
+  }).join("");
+}
+
+// ---------- Monthly Reports ----------
+function txInMonth(tx, year, month){
+  const d = new Date(tx.date);
+  return d.getFullYear()===year && d.getMonth()===month;
+}
+
+function computeMonthStats(year, month){
+  const monthTx = transactions.filter(t=>txInMonth(t, year, month));
+  const expenses = monthTx.filter(t=>t.type==="expense");
+  const payments = monthTx.filter(t=>t.type==="payment");
+  const totalSpent = expenses.reduce((s,t)=>s+t.amount,0);
+  const totalIncome = payments.reduce((s,t)=>s+t.amount,0);
+  return { monthTx, expenses, payments, totalSpent, totalIncome };
+}
+
+function renderReports(){
+  const year = reportDate.getFullYear();
+  const month = reportDate.getMonth();
+  $("monthTitle").textContent = MONTH_NAMES[month] + " " + year;
+
+  const now = new Date();
+  const isCurrentMonth = year===now.getFullYear() && month===now.getMonth();
+  $("nextMonthBtn").disabled = isCurrentMonth;
+
+  const { expenses, totalSpent, totalIncome, payments } = computeMonthStats(year, month);
+  const prevD = new Date(year, month-1, 1);
+  const prevStats = computeMonthStats(prevD.getFullYear(), prevD.getMonth());
+
+  const content = $("reportContent");
+
+  if(!expenses.length && !totalIncome){
+    content.innerHTML = `<div class="empty-state"><div class="glyph">&#9671;</div><p>No activity recorded for this period.</p></div>`;
+    return;
+  }
+
+  let changeBadge = "";
+  if(prevStats.totalSpent > 0){
+    const changePct = ((totalSpent - prevStats.totalSpent) / prevStats.totalSpent * 100);
+    const arrow = changePct > 0.5 ? "&#9650;" : (changePct < -0.5 ? "&#9660;" : "&mdash;");
+    changeBadge = `<div class="change-badge">${arrow} ${Math.abs(changePct).toFixed(1)}% vs ${MONTH_NAMES[prevD.getMonth()].slice(0,3)}</div>`;
+  }
+
+  content.innerHTML = `
+    <div class="stat-grid">
+      <div class="stat-card"><div class="k">Income</div><div class="v">${fmt(totalIncome)}</div></div>
+      <div class="stat-card"><div class="k">Spent</div><div class="v">${fmt(totalSpent)}</div></div>
+      <div class="stat-card"><div class="k">Net</div><div class="v maroon">${fmt(totalIncome-totalSpent)}</div></div>
+      <div class="stat-card"><div class="k">Transactions</div><div class="v">${expenses.length + payments.length}</div></div>
+    </div>
+    ${changeBadge}
+    <div class="section-label" style="margin-top:18px;">Category Breakdown</div>
+    <div class="holdings-wrap">${expenses.length ? renderHoldingsHtml(expenses, totalSpent) : '<div class="empty-state"><div class="glyph">&#9671;</div><p>No expenses this month.</p></div>'}</div>
+  `;
+}
+
+function shiftReportMonth(delta){
+  reportDate = new Date(reportDate.getFullYear(), reportDate.getMonth()+delta, 1);
+  renderReports();
+}
+
+// ---------- Auto monthly statement banner ----------
+function checkMonthlyStatement(){
+  const now = new Date();
+  if(now.getDate() !== 1) return;
+  const prevD = new Date(now.getFullYear(), now.getMonth()-1, 1);
+  const stats = computeMonthStats(prevD.getFullYear(), prevD.getMonth());
+  if(!stats.expenses.length && !stats.totalIncome) return;
+
+  $("statementBannerText").textContent =
+    `${MONTH_NAMES[prevD.getMonth()]}: spent ${fmt(stats.totalSpent)} across ${stats.expenses.length} transactions — tap to view`;
+  $("statementBanner").classList.add("show");
+  $("statementBanner").onclick = (e)=>{
+    if(e.target.id === "statementClose") return;
+    reportDate = prevD;
+    switchView("reports");
+    renderReports();
+  };
+  $("statementClose").onclick = (e)=>{
+    e.stopPropagation();
+    $("statementBanner").classList.remove("show");
+  };
+}
+
+function renderAll(){
+  if(!loaded) return;
+  renderBalance();
+  renderLedger();
+  renderStats();
+  renderReports();
+}
+
+// ---------- Nav ----------
+function switchView(view){
+  document.querySelectorAll(".nav-btn").forEach(b=>b.classList.toggle("active", b.dataset.view===view));
+  document.querySelectorAll(".view").forEach(v=>v.classList.toggle("active", v.id === "view-"+view));
+  $("bannerSub").textContent = BANNER_SUBS[view] || "";
+}
+document.querySelectorAll(".nav-btn").forEach(btn=>{
+  btn.onclick = ()=> switchView(btn.dataset.view);
+});
+
+$("btnTypeExpense").onclick = ()=>setType("expense");
+$("btnTypePayment").onclick = ()=>setType("payment");
+$("submitBtn").onclick = handleSubmit;
+$("prevMonthBtn").onclick = ()=>shiftReportMonth(-1);
+$("nextMonthBtn").onclick = ()=>shiftReportMonth(1);
+
+// init
+renderChips();
+setType("expense");
+loadData();
+</script>
+</body>
+</html>
